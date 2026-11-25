@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>ubícate — Tu ubicación en el mapa del mundo</title>
+  <meta name="description" content="Descubre, explora y comparte tu ubicación exacta en el mapa del mundo. Funciona en el móvil como aplicación instalable.">
+  <meta name="theme-color" content="#070d18">
+  <meta name="color-scheme" content="dark">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="ubícate">
+
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" type="image/png" href="/icons/icon-192.png">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+
+  <link rel="preconnect" href="https://unpkg.com" crossorigin>
+  <link rel="preconnect" href="https://a.tile.openstreetmap.org" crossorigin>
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+        crossorigin="">
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <a class="brand" href="/" aria-label="ubícate, inicio">
+        <span class="brand__mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 21.35s7.25-6.2 7.25-11.1a7.25 7.25 0 1 0-14.5 0c0 4.9 7.25 11.1 7.25 11.1Zm0-8.6a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5Z"/>
+          </svg>
+        </span>
+        <span class="brand__name">ubícate</span>
+      </a>
+
+      <div class="status" id="status" data-state="loading" role="status" aria-live="polite">
+        <span class="status__dot" aria-hidden="true"></span>
+        <span class="status__text" id="status-text">Iniciando…</span>
+      </div>
+    </header>
+
+    <main class="layout">
+      <section class="map-stage">
+        <div id="map" class="map" role="application" aria-label="Mapa mundial interactivo"></div>
+
+        <form class="search" id="search-form" role="search" autocomplete="off">
+          <svg class="search__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true">
+            <circle cx="11" cy="11" r="6.5"></circle>
+            <path d="m16.2 16.2 4 4"></path>
+          </svg>
+          <input class="search__input" id="search-input" type="search" placeholder="Buscar ciudad, país o lugar" aria-label="Buscar un lugar en el mapa" enterkeyhint="search" spellcheck="false">
+          <button class="search__clear" id="search-clear" type="button" aria-label="Limpiar búsqueda" hidden>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+              <path d="M6 6l12 12M18 6 6 18"></path>
+            </svg>
+          </button>
+          <button class="search__submit" type="submit" aria-label="Buscar lugar">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M5 12h14M13 6l6 6-6 6"></path>
+            </svg>
+          </button>
+          <ul class="search__results" id="search-results" role="listbox" aria-label="Resultados de búsqueda" hidden></ul>
+        </form>
+
+        <button class="fab" id="locate-btn" type="button" aria-label="Ubicarme ahora">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="3.2"></circle>
+            <circle cx="12" cy="12" r="7.4" opacity=".45"></circle>
+            <path d="M12 2.5v2.4M12 19.1v2.4M2.5 12h2.4M19.1 12h2.4"></path>
+          </svg>
+        </button>
+      </section>
+
+      <section class="sheet" id="sheet" aria-label="Detalles de tu ubicación">
+        <div class="sheet__handle" aria-hidden="true"></div>
+
+        <div class="sheet__head">
+          <p class="eyebrow">Tu posición</p>
+          <h1 class="place" id="place">Buscando tu ubicación…</h1>
+          <p class="coords" id="coords">—</p>
+        </div>
+
+        <div class="facts">
+          <div class="fact">
+            <span class="fact__label">Latitud</span>
+            <span class="fact__value" id="lat">—</span>
+          </div>
+          <div class="fact">
+            <span class="fact__label">Longitud</span>
+            <span class="fact__value" id="lng">—</span>
+          </div>
+          <div class="fact">
+            <span class="fact__label">Precisión</span>
+            <span class="fact__value" id="accuracy">—</span>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button class="btn" id="btn-center" type="button" disabled>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="6.8"></circle>
+              <circle cx="12" cy="12" r="2.1"></circle>
+              <path d="M12 3.2v2.1M12 18.7v2.1M3.2 12h2.1M18.7 12h2.1"></path>
+            </svg>
+            <span>Centrar</span>
+          </button>
+          <button class="btn" id="btn-track" type="button" aria-pressed="false">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="2.1" fill="currentColor" stroke="none"></circle>
+              <path d="M8.5 8.5a5 5 0 0 0 0 7M15.5 8.5a5 5 0 0 1 0 7"></path>
+              <path d="M5.6 5.6a9.1 9.1 0 0 0 0 12.8M18.4 5.6a9.1 9.1 0 0 1 0 12.8"></path>
+            </svg>
+            <span>En vivo</span>
+          </button>
+          <button class="btn" id="btn-share" type="button" disabled>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="18" cy="5" r="2.6"></circle>
+              <circle cx="6" cy="12" r="2.6"></circle>
+              <circle cx="18" cy="19" r="2.6"></circle>
+              <path d="m8.3 10.8 7.4-4.3M8.3 13.2l7.4 4.3"></path>
+            </svg>
+            <span>Compartir</span>
+          </button>
+          <button class="btn" id="btn-copy" type="button" disabled>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="9" y="9" width="11" height="11" rx="2.4"></rect>
+              <path d="M15 5.5A2.5 2.5 0 0 0 12.5 3H6.6A2.6 2.6 0 0 0 4 5.6v5.9A2.5 2.5 0 0 0 6.5 14"></path>
+            </svg>
+            <span>Copiar</span>
+          </button>
+        </div>
+
+        <p class="fineprint">
+          Tu ubicación se procesa en tu dispositivo y no se guarda en el servidor.
+          Mapa y datos: © colaboradores de
+          <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>.
+          Si no concedes el permiso de ubicación, mostramos una aproximación por IP.
+        </p>
+      </section>
+    </main>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <noscript>
+    <div class="noscript">ubícate necesita JavaScript para mostrar el mapa y geolocalizarte.</div>
+  </noscript>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+          integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+          crossorigin=""></script>
+  <script src="/js/app.js" defer></script>
+</body>
+</html>
